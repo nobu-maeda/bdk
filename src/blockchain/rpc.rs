@@ -46,7 +46,7 @@ use bitcoincore_rpc::json::{
 use bitcoincore_rpc::jsonrpc::serde_json::{json, Value};
 use bitcoincore_rpc::Auth as RpcAuth;
 use bitcoincore_rpc::{Client, RpcApi};
-use log::{debug, info};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -388,7 +388,9 @@ impl<'a, D: BatchDatabase> DbState<'a, D> {
         // sync scriptPubKeys from Database to Core wallet
         let scripts_iter = self.ext_spks.iter().chain(&self.int_spks);
         if is_descriptor {
-            import_descriptors(client, start_epoch, scripts_iter)?;
+            if let Some(error) = import_descriptors(client, start_epoch, scripts_iter).err() {
+                warn!("importdescriptors failed: {}", error);
+            }
         } else {
             import_multi(client, start_epoch, scripts_iter)?;
         }
